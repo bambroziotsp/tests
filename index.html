@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP Solution Advisor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sohne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            padding: 48px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 2px;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-container {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .question-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #f1f5f9;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            padding: 16px;
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            background: rgba(30, 27, 75, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .option:hover {
+            border-color: rgba(96, 165, 250, 0.5);
+            background: rgba(30, 27, 75, 0.8);
+            transform: translateX(4px);
+        }
+
+        .option.selected {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.15);
+            color: #e0f2fe;
+            font-weight: 500;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+            justify-content: space-between;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            color: white;
+            flex-grow: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(96, 165, 250, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-container {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .result-box {
+            background: rgba(30, 27, 75, 0.6);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #60a5fa;
+            margin-bottom: 16px;
+        }
+
+        .result-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .result-content strong {
+            color: #a78bfa;
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .recommendation-card {
+            background: rgba(30, 27, 75, 0.8);
+            border-left: 4px solid #60a5fa;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .recommendation-card.secondary {
+            border-left-color: #a78bfa;
+        }
+
+        .recommendation-card.alternative {
+            border-left-color: #38bdf8;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin-top: 24px;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .comparison-table th {
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #60a5fa;
+        }
+
+        .comparison-table td {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 12px;
+            color: #cbd5e1;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(96, 165, 250, 0.05);
+        }
+
+        .check-mark {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .x-mark {
+            color: #f87171;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TSP Solution Advisor</h1>
+            <p>Discover which solution is ideal for your needs</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="questionnaire">
+            <!-- Questões serão inseridas aqui -->
+        </div>
+
+        <div id="results" class="result-container">
+            <div id="resultsContent"></div>
+            <button class="btn-primary" onclick="resetQuiz()">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                id: 'useCase',
+                text: 'What is your main use case?',
+                options: [
+                    'Quick AI assistance (reports, emails, queries, analysis, brainstorming)',
+                    'Generate documents (one-time, ad-hoc: contracts, proposals, letters)',
+                    'Automate repetitive processes and workflows',
+                    'Code development and programming',
+                    'Generate multimedia content (video, audio, images)'
+                ]
+            },
+            {
+                id: 'frequency',
+                text: 'How often do you need this solution?',
+                options: [
+                    'Occasionally / As needed (one-time or sporadic use)',
+                    'Regularly (weekly or monthly recurring)',
+                    'Continuously (daily or always-on automation)'
+                ]
+            },
+            {
+                id: 'complexity',
+                text: 'What is the complexity of your tasks?',
+                options: [
+                    'Simple (straightforward, single task, no system integration)',
+                    'Medium (multiple steps, basic data processing, 1-2 system integrations)',
+                    'Complex (multi-system integration, sophisticated logic, high volume, requires custom development)'
+                ]
+            },
+            {
+                id: 'scope',
+                text: 'What is the scope of impact and data handling?',
+                options: [
+                    'Personal/Individual (affects only me or small team, limited data)',
+                    'Department-wide (affects multiple users, moderate data volume)',
+                    'Enterprise-wide (affects many users, large data volume, critical business process)'
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let answers = {};
+
+        function initQuiz() {
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            let html = `
+                <div class="question-container active">
+                    <div class="question-text">${q.text}</div>
+                    <div class="options">
+            `;
+
+            q.options.forEach((option, index) => {
+                const isSelected = answers[q.id] === index;
+                html += `
+                    <div class="option ${isSelected ? 'selected' : ''}" onclick="selectOption(${index}, '${q.id}')">
+                        ${option}
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="previousQuestion()" ${currentQuestion === 0 ? 'style="display:none;"' : ''}>← Previous</button>
+                        <button class="btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next →</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('questionnaire').innerHTML = html;
+        }
+
+        function selectOption(index, questionId) {
+            answers[questionId] = index;
+            document.getElementById('nextBtn').disabled = false;
+            
+            const options = document.querySelectorAll('.option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('questionnaire').style.display = 'none';
+            document.getElementById('results').classList.add('active');
+
+            const recommendation = calculateRecommendation();
+            renderResults(recommendation);
+        }
+
+        function calculateRecommendation() {
+            const a = answers;
+            let scores = {
+                chat: 0,
+                code: 0,
+                automation: 0,
+                contentGeneration: 0
+            };
+
+            // QUESTÃO 1: Use Case - Decisão primária (muito alto peso)
+            if (a.useCase === 0) scores.chat += 50;              // Quick AI assistance
+            if (a.useCase === 1) scores.chat += 50;              // Generate documents (one-time)
+            if (a.useCase === 2) scores.automation += 50;        // Automate processes
+            if (a.useCase === 3) scores.code += 50;              // Code development
+            if (a.useCase === 4) scores.contentGeneration += 50; // Multimedia
+
+            // QUESTÃO 2: Frequency (refinement)
+            // Occasional = Chat friendly (se for simples)
+            if (a.frequency === 0) scores.chat += 10;
+            // Regular = Automation becomes relevant (necessita automação)
+            if (a.frequency === 1) scores.automation += 8;
+            // Continuous = Automation strongly preferred (necessita automação contínua)
+            if (a.frequency === 2) scores.automation += 15;
+
+            // QUESTÃO 3: Complexity (crucial refinement)
+            if (a.complexity === 0) {
+                // Simple = Chat is perfect (no integrations needed)
+                scores.chat += 15;
+            }
+            if (a.complexity === 1) {
+                // Medium = Automation (basic integrations) - Chat não suporta integrações
+                scores.automation += 15;
+            }
+            if (a.complexity === 2) {
+                // Complex = Automation or Code (multiple integrations, custom logic)
+                scores.automation += 20;
+                scores.code += 10;
+            }
+
+            // QUESTÃO 4: Scope (final refinement for automation decisions)
+            if (a.scope === 0) {
+                // Personal/Individual = Slight preference for simplicity, but doesn't override complexity
+                // (não adiciona pontos ao Chat se for Medium/Complex)
+            }
+            if (a.scope === 1) {
+                // Department = Automation more justified
+                scores.automation += 10;
+            }
+            if (a.scope === 2) {
+                // Enterprise = Automation strongly recommended
+                scores.automation += 15;
+                scores.code += 5;
+            }
+
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            return {
+                primary: sorted[0][0],
+                secondary: sorted[1][0],
+                tertiary: sorted[2][0],
+                scores: scores
+            };
+        }
+
+        function renderResults(recommendation) {
+            const a = answers;
+            
+            // VALIDAÇÃO: Chat NÃO pode ser recomendado se houver integrações (Medium ou Complex)
+            if (recommendation.primary === 'chat' && (a.complexity === 1 || a.complexity === 2)) {
+                // Se Chat foi "eleito" mas há integrações, forçar Automation
+                recommendation.primary = 'automation';
+            }
+            
+            const recommendations = {
+                chat: {
+                    title: '💬 TSP AI Chat',
+                    description: 'Conversational AI Assistant - AI for your everyday work',
+                    details: 'An integrated AI chat built exclusively for TSP employees to access the best AI models on the market through a single platform. Perfect for quick, interactive AI assistance. Access to multiple AI models via a simple and intuitive interface.',
+                    examples: [
+                        '📄 Generate reports and documents (one-time, ad-hoc requests)',
+                        '✉️ Draft, review, and improve emails and communications',
+                        '💡 Smart queries and research (find insights, compile information)',
+                        '📊 Data analysis and insights (understand trends, extract patterns)',
+                        '🧠 Brainstorm ideas and explore solutions',
+                        '📖 Summarize long documents and content',
+                        '🎯 Get quick answers to everyday questions'
+                    ],
+                    provider: 'TSP AI Chat',
+                    setup: 'Pilot program in progress',
+                    targetUser: 'All users'
+                },
+                automation: {
+                    title: '⚙️ Automation',
+                    description: 'Repetitive process & workflow automation',
+                    details: 'To automate recurring tasks, structured workflows, and repetitive document generation at scale. Use this when you need processes to run automatically on a schedule or triggered by events. Two options available depending on requirements and complexity.',
+                    aiModel: 'Recommended AI Model: Claude 3.5 Sonnet (optimal balance of speed, cost, and capabilities)',
+                    examples: [
+                        '📄 Generate documents in batch from data (contracts, proposals, recurring reports)',
+                        '📋 Generate reports automatically on a schedule (monthly, weekly)',
+                        '📧 Automate email workflows and responses',
+                        '📊 Extract and process data from multiple sources continuously',
+                        '🔄 Scheduled task execution (batch processing)',
+                        '✅ Approval workflows and notifications',
+                        '💼 Business process automation with triggers'
+                    ],
+                    options: [
+                        {
+                            name: 'Claude Co-Work',
+                            icon: '🤖',
+                            pros: 'Any user can use with training; build recurring document generation workflows',
+                            cons: 'Requires Claude license; model dependent',
+                            when: 'When you want to build automations yourself (e.g., monthly automated reports)'
+                        },
+                        {
+                            name: 'TSP AI Hub',
+                            icon: '🏗️',
+                            pros: 'AI model agnostic; built once; ideal for multi-system document generation',
+                            cons: 'Requires TSP Developers team',
+                            when: 'For critical automations (e.g., contract generation from ERP data)'
+                        }
+                    ]
+                },
+                code: {
+                    title: '💻 Code',
+                    description: 'Code development',
+                    details: 'For programming, development and code assistance. Also for advanced document generation solutions requiring system integration and custom logic. Currently using GitHub Copilot, with migration plans.',
+                    aiModel: 'Recommended AI Model: Claude 3.5 Sonnet (superior code quality and understanding)',
+                    options: [
+                        {
+                            name: 'GitHub Copilot',
+                            icon: '🐙',
+                            current: true,
+                            status: 'Current solution'
+                        },
+                        {
+                            name: 'Claude Code',
+                            icon: '🚀',
+                            upcoming: true,
+                            status: 'Under evaluation (compatible with OpenRouter)',
+                            note: 'Pricing similar to GitHub Copilot'
+                        }
+                    ]
+                },
+                contentGeneration: {
+                    title: '🎬 Content Generation',
+                    description: 'Multimedia content creation',
+                    details: 'For generating multimedia formats including video, audio, images, and visual designs. Uses specialized AI models optimized for creative multimedia outputs. Note: Document generation is covered under Chat and Automation solutions.',
+                    aiModel: 'Recommended AI Models: Runway ML (video), ElevenLabs (audio), Midjourney/DALL-E 3 (images)',
+                    examples: [
+                        '🎥 Generate video scripts and storyboards',
+                        '🎵 Create audio content and podcasts',
+                        '🖼️ Generate images and visual designs',
+                        '🎨 Design graphics and visual assets',
+                        '📱 Develop social media visual content',
+                        '✍️ Create visual-based marketing materials'
+                    ],
+                    note: 'Content generation tools are still being evaluated for TSP adoption. Contact the TSP team for current status and available solutions.',
+                    provider: 'TBD - Under evaluation',
+                    setup: 'To be determined',
+                    targetUser: 'Marketing, Content, Design teams (tentative)'
+                }
+            };
+
+            let html = '';
+
+            // Recomendação principal
+            const primary = recommendations[recommendation.primary];
+            let primaryHtml = `
+                <div class="result-box">
+                    <div class="result-title">✨ Primary Recommendation</div>
+                    <div class="result-content">
+                        <strong>${primary.title}</strong><br/>
+                        ${primary.description}<br/><br/>
+                        ${primary.details}
+            `;
+            
+            if (primary.examples) {
+                primaryHtml += `
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(96, 165, 250, 0.2);">
+                            <strong style="color: #60a5fa;">Daily use examples:</strong><br/>
+                            ${primary.examples.map(ex => `<div style="margin: 6px 0; padding-left: 8px; color: #cbd5e1;">${ex}</div>`).join('')}
+                        </div>
+                `;
+            }
+            
+            // Mostrar recomendação de modelo de IA se existir (não para Chat)
+            if (primary.aiModel && recommendation.primary !== 'chat') {
+                primaryHtml += `
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(168, 85, 247, 0.1); border-left: 3px solid #a855f7; border-radius: 4px;">
+                            <strong style="color: #d8b4fe;">🤖 ${primary.aiModel}</strong>
+                        </div>
+                `;
+            }
+            
+            primaryHtml += `
+                    </div>
+                </div>
+            `;
+            html += primaryHtml;
+
+            // Se for automation, mostrar opções
+            if (recommendation.primary === 'automation') {
+                html += renderAutomationOptions(primary);
+            }
+
+            // Se for code, mostrar opções
+            if (recommendation.primary === 'code') {
+                html += renderCodeOptions(primary);
+            }
+
+            // Se for content generation, mostrar aviso especial
+            if (recommendation.primary === 'contentGeneration') {
+                html += renderContentGenerationNotice(primary);
+            }
+
+            // APENAS UMA RECOMENDAÇÃO - SEM "Additional Considerations"
+            html += `
+                <div class="info-box">
+                    <strong>📋 Next Steps:</strong><br/>
+                    • Contact the TSP team for detailed discussion<br/>
+                    • Evaluate licenses and costs with Bruno Ambrozio and Chris York<br/>
+                    • Start with a pilot to validate the solution
+                </div>
+            `;
+
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+
+        function renderAutomationOptions(primary) {
+            let html = '<div style="margin-top: 24px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 20px;">';
+            html += '<div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: #d8b4fe;">Implementation Approach</div>';
+            html += '<div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 16px;">Evaluate with TSP AI team which approach is best for your specific use case:</div>';
+            html += '<div class="recommendation-grid">';
+            
+            primary.options.forEach(opt => {
+                html += `
+                    <div class="recommendation-card secondary">
+                        <div class="card-title">${opt.icon} ${opt.name}</div>
+                        <div class="card-description">
+                            <strong>✓ Advantages:</strong> ${opt.pros}<br/>
+                            <strong>⚠ Limitations:</strong> ${opt.cons}<br/>
+                            <strong>📌 Use when:</strong> ${opt.when}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderCodeOptions(primary) {
+            let html = '<div class="recommendation-grid">';
+            primary.options.forEach(opt => {
+                const badge = opt.current ? '✓ Active' : opt.upcoming ? '⏳ Under evaluation' : '';
+                html += `
+                    <div class="recommendation-card alternative">
+                        <div class="card-title">${opt.icon} ${opt.name} ${badge}</div>
+                        <div class="card-description">
+                            <strong>Status:</strong> ${opt.status}<br/>
+                            ${opt.note ? `<strong>📝 Note:</strong> ${opt.note}` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderContentGenerationNotice(primary) {
+            let html = `
+                <div style="margin-top: 24px; background: rgba(251, 146, 60, 0.1); border-left: 4px solid #fb923c; padding: 16px; border-radius: 4px;">
+                    <strong style="color: #fb923c;">⚠️ Status Update:</strong><br/>
+                    <div style="font-size: 0.9rem; color: #cbd5e1; margin-top: 8px;">
+                        ${primary.note}<br/><br/>
+                        <strong>Recommended action:</strong> Reach out to the TSP team to discuss your content generation needs and explore available solutions.
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            answers = {};
+            document.getElementById('questionnaire').style.display = 'block';
+            document.getElementById('results').classList.remove('active');
+            initQuiz();
+        }
+
+        initQuiz();
+    </script>
+</body>
+</html>
